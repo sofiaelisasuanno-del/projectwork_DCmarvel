@@ -2,6 +2,48 @@ import streamlit as st
 import joblib
 import json
 import numpy as np
+import requests
+import re
+
+# ── FUNZIONE IMMAGINE WIKIPEDIA ──────────────────────────────────────
+def get_wiki_image(character_name):
+    clean_name = re.sub(r'\s*\(.*?\)', '', character_name).strip()
+    headers = {"User-Agent": "DCMarvelQuiz/1.0 (educational project)"}
+
+    for query in [clean_name, clean_name + " comics", character_name]:
+        try:
+            # Cerca il titolo della pagina
+            search_params = {
+                "action": "opensearch",
+                "search": query,
+                "limit": 1,
+                "format": "json"
+            }
+            r = requests.get("https://en.wikipedia.org/w/api.php",
+                           params=search_params, headers=headers, timeout=6)
+            results = r.json()
+            if not results[1]:
+                continue
+            title = results[1][0]
+
+            # Prendi l'immagine dalla pagina trovata
+            img_params = {
+                "action": "query",
+                "titles": title,
+                "prop": "pageimages",
+                "format": "json",
+                "pithumbsize": 400,
+            }
+            r2 = requests.get("https://en.wikipedia.org/w/api.php",
+                            params=img_params, headers=headers, timeout=6)
+            data = r2.json()
+            pages = data["query"]["pages"]
+            page = next(iter(pages.values()))
+            if "thumbnail" in page:
+                return page["thumbnail"]["source"]
+        except Exception:
+            continue
+    return None
 
 # ── CARICA MODELLO ───────────────────────────────────────────────────
 model = joblib.load("model.pkl")
@@ -11,7 +53,7 @@ with open("options.json") as f:
 
 # ── CONFIGURAZIONE PAGINA ────────────────────────────────────────────
 st.set_page_config(
-    page_title="Scopri il tuo alter ego DC/Marvel",
+    page_title="Quale personaggio DC/Marvel sei?",
     page_icon="🦸",
     layout="centered"
 )
@@ -21,13 +63,10 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap');
 
-/* Sfondo scuro */
 .stApp {
     background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
     color: white;
 }
-
-/* Titolo principale */
 h1 {
     font-family: 'Bangers', cursive !important;
     font-size: 3rem !important;
@@ -36,17 +75,12 @@ h1 {
     background: linear-gradient(90deg, #ff2d2d, #4444ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: none;
 }
-
-/* Sottotitoli */
 h2, h3 {
     font-family: 'Bangers', cursive !important;
     letter-spacing: 2px !important;
     color: #ffcc00 !important;
 }
-
-/* Card domanda */
 .question-card {
     background: rgba(255,255,255,0.05);
     border: 2px solid rgba(255, 45, 45, 0.4);
@@ -55,8 +89,6 @@ h2, h3 {
     margin: 1rem 0;
     box-shadow: 0 0 20px rgba(255, 45, 45, 0.2);
 }
-
-/* Testo domanda */
 .question-text {
     font-family: 'Bangers', cursive;
     font-size: 1.8rem;
@@ -64,8 +96,6 @@ h2, h3 {
     letter-spacing: 2px;
     margin-bottom: 1rem;
 }
-
-/* Bottone avanti */
 .stButton > button {
     background: linear-gradient(90deg, #ff2d2d, #cc0000) !important;
     color: white !important;
@@ -76,32 +106,13 @@ h2, h3 {
     border-radius: 8px !important;
     padding: 0.6rem 2rem !important;
     box-shadow: 0 4px 15px rgba(255, 45, 45, 0.4) !important;
-    transition: all 0.2s !important;
 }
-.stButton > button:hover {
-    transform: scale(1.05) !important;
-    box-shadow: 0 6px 20px rgba(255, 45, 45, 0.6) !important;
-}
-
-/* Radio buttons */
-.stRadio > label {
-    color: white !important;
-    font-family: 'Comic Neue', cursive !important;
-    font-size: 1.05rem !important;
-}
-.stRadio div[role="radiogroup"] label p {
-    color: white !important;
-}
-.stRadio div[role="radiogroup"] label {
-    color: white !important;
-}
-
-/* Progress bar */
+.stRadio > label { color: white !important; }
+.stRadio div[role="radiogroup"] label p { color: white !important; }
+.stRadio div[role="radiogroup"] label { color: white !important; }
 .stProgress > div > div {
     background: linear-gradient(90deg, #ff2d2d, #4444ff) !important;
 }
-
-/* Banner risultato */
 .result-banner {
     background: linear-gradient(135deg, #1a0a2e, #0a1a3e);
     border: 3px solid #ffcc00;
@@ -110,15 +121,20 @@ h2, h3 {
     text-align: center;
     box-shadow: 0 0 30px rgba(255, 204, 0, 0.3);
 }
-
 .result-name {
     font-family: 'Bangers', cursive;
     font-size: 2.8rem;
     color: #ffcc00;
     letter-spacing: 4px;
 }
-
-/* Nasconde elementi Streamlit */
+.character-img {
+    border-radius: 16px;
+    border: 3px solid #ffcc00;
+    box-shadow: 0 0 25px rgba(255, 204, 0, 0.4);
+    max-width: 280px;
+    margin: 1rem auto;
+    display: block;
+}
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 </style>
@@ -250,8 +266,6 @@ st.markdown("<p style='text-align:center; color:#aaaacc; font-size:1.1rem;'>Scop
 if st.session_state.risultato is None:
 
     step = st.session_state.step
-
-    # Barra avanzamento
     progresso = step / TOTALE
     st.progress(progresso)
     st.markdown(f"<p style='text-align:center; color:#aaaacc;'>Domanda {step + 1} di {TOTALE}</p>", unsafe_allow_html=True)
@@ -275,13 +289,11 @@ if st.session_state.risultato is None:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("AVANTI ➡️" if step < TOTALE - 1 else "🔍 SCOPRI CHI SEI!", use_container_width=True):
-                # Salva risposta
                 if domanda["chiave"]:
                     st.session_state.risposte[domanda["chiave"]] = domanda["opzioni"][scelta]
                 st.session_state.step += 1
 
                 if st.session_state.step == TOTALE:
-                    # ── CALCOLA RISULTATO ─────────────────────────────
                     feature_cols = ["ALIGN", "SEX", "EYE", "HAIR", "ID", "ALIVE", "publisher", "POPULARITY"]
                     encoded = []
                     for col in feature_cols:
@@ -309,9 +321,21 @@ else:
     <div class='result-banner'>
         <p style='color:#aaaacc; font-size:1.2rem; font-family: Bangers, cursive; letter-spacing:2px;'>IL TUO ALTER EGO È...</p>
         <div class='result-name'>✨ {prediction} ✨</div>
-        <p style='color:#aaaacc; margin-top:1rem; font-size:1rem;'>Scopri di più su questo personaggio!</p>
     </div>
     """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Cerca immagine Wikipedia
+    with st.spinner("🔍 Cerco l'immagine del personaggio..."):
+        img_url = get_wiki_image(prediction)
+
+    if img_url:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown(f"<img src='{img_url}' class='character-img'>", unsafe_allow_html=True)
+    else:
+        st.markdown("<p style='text-align:center; color:#aaaacc;'>🖼️ Immagine non disponibile per questo personaggio</p>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])

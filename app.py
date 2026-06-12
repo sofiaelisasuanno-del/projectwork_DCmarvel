@@ -7,35 +7,30 @@ import re
 
 # ── FUNZIONE IMMAGINE WIKIPEDIA ──────────────────────────────────────
 def get_wiki_image(character_name):
-    clean_name = re.sub(r'\s*\(.*?\)', '', character_name).strip()
     headers = {"User-Agent": "DCMarvelQuiz/1.0 (educational project)"}
 
-    for query in [clean_name, clean_name + " comics", character_name]:
+    # Estrai nome fuori e dentro parentesi
+    match = re.search(r'\(([^)]+)\)', character_name)
+    inside = match.group(1) if match else None
+    outside = re.sub(r'\s*\(.*?\)', '', character_name).strip()
+
+    # Costruisce query dal più specifico al più generico
+    queries = [outside]
+    if inside and not re.search(r'Earth-|New Earth|No\.|Vol\.', inside):
+        queries += [inside, inside + " Marvel Comics", inside + " DC Comics"]
+    queries += [outside + " Marvel Comics", outside + " DC Comics", outside + " comics"]
+
+    for query in queries:
         try:
-            # Cerca il titolo della pagina
-            search_params = {
-                "action": "opensearch",
-                "search": query,
-                "limit": 1,
-                "format": "json"
-            }
-            r = requests.get("https://en.wikipedia.org/w/api.php",
-                           params=search_params, headers=headers, timeout=6)
+            r = requests.get("https://en.wikipedia.org/w/api.php", headers=headers, timeout=6,
+                params={"action": "opensearch", "search": query, "limit": 1, "format": "json"})
             results = r.json()
             if not results[1]:
                 continue
             title = results[1][0]
-
-            # Prendi l'immagine dalla pagina trovata
-            img_params = {
-                "action": "query",
-                "titles": title,
-                "prop": "pageimages",
-                "format": "json",
-                "pithumbsize": 400,
-            }
-            r2 = requests.get("https://en.wikipedia.org/w/api.php",
-                            params=img_params, headers=headers, timeout=6)
+            r2 = requests.get("https://en.wikipedia.org/w/api.php", headers=headers, timeout=6,
+                params={"action": "query", "titles": title, "prop": "pageimages",
+                        "format": "json", "pithumbsize": 400})
             data = r2.json()
             pages = data["query"]["pages"]
             page = next(iter(pages.values()))

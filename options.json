@@ -1,0 +1,87 @@
+{
+  "ALIGN": [
+    "Bad Characters",
+    "Good Characters",
+    "Neutral Characters"
+  ],
+  "SEX": [
+    "Agender Characters",
+    "Female Characters",
+    "Genderfluid Characters",
+    "Genderless Characters",
+    "Male Characters"
+  ],
+  "EYE": [
+    "Amber Eyes",
+    "Black Eyeballs",
+    "Black Eyes",
+    "Blue Eyes",
+    "Brown Eyes",
+    "Gold Eyes",
+    "Green Eyes",
+    "Grey Eyes",
+    "Hazel Eyes",
+    "Magenta Eyes",
+    "Multiple Eyes",
+    "No Eyes",
+    "One Eye",
+    "Orange Eyes",
+    "Photocellular Eyes",
+    "Pink Eyes",
+    "Purple Eyes",
+    "Red Eyes",
+    "Silver Eyes",
+    "Variable Eyes",
+    "Violet Eyes",
+    "White Eyes",
+    "Yellow Eyeballs",
+    "Yellow Eyes"
+  ],
+  "HAIR": [
+    "Auburn Hair",
+    "Bald",
+    "Black Hair",
+    "Blond Hair",
+    "Blue Hair",
+    "Brown Hair",
+    "Gold Hair",
+    "Green Hair",
+    "Grey Hair",
+    "Light Brown Hair",
+    "Magenta Hair",
+    "No Hair",
+    "Orange Hair",
+    "Pink Hair",
+    "Platinum Blond Hair",
+    "Purple Hair",
+    "Red Hair",
+    "Reddish Blond Hair",
+    "Reddish Brown Hair",
+    "Silver Hair",
+    "Strawberry Blond Hair",
+    "Variable Hair",
+    "Violet Hair",
+    "White Hair",
+    "Yellow Hair"
+  ],
+  "ID": [
+    "Known to Authorities Identity",
+    "No Dual Identity",
+    "Public Identity",
+    "Secret Identity"
+  ],
+  "ALIVE": [
+    "Deceased Characters",
+    "Living Characters"
+  ],
+  "publisher": [
+    "DC",
+    "Marvel"
+  ],
+  "POPULARITY": [
+    "Alta",
+    "Bassa",
+    "Leggenda",
+    "Media"
+  ]
+}

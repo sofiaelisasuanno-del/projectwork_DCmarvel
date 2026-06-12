@@ -89,6 +89,12 @@ h2, h3 {
     font-family: 'Comic Neue', cursive !important;
     font-size: 1.05rem !important;
 }
+.stRadio div[role="radiogroup"] label p {
+    color: white !important;
+}
+.stRadio div[role="radiogroup"] label {
+    color: white !important;
+}
 
 /* Progress bar */
 .stProgress > div > div {

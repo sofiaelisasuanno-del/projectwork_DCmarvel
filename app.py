@@ -7,30 +7,35 @@ import re
 
 # ── FUNZIONE IMMAGINE WIKIPEDIA ──────────────────────────────────────
 def get_wiki_image(character_name):
+    clean_name = re.sub(r'\s*\(.*?\)', '', character_name).strip()
     headers = {"User-Agent": "DCMarvelQuiz/1.0 (educational project)"}
 
-    # Estrai nome fuori e dentro parentesi
-    match = re.search(r'\(([^)]+)\)', character_name)
-    inside = match.group(1) if match else None
-    outside = re.sub(r'\s*\(.*?\)', '', character_name).strip()
-
-    # Costruisce query dal più specifico al più generico
-    queries = [outside]
-    if inside and not re.search(r'Earth-|New Earth|No\.|Vol\.', inside):
-        queries += [inside, inside + " Marvel Comics", inside + " DC Comics"]
-    queries += [outside + " Marvel Comics", outside + " DC Comics", outside + " comics"]
-
-    for query in queries:
+    for query in [clean_name, clean_name + " comics", character_name]:
         try:
-            r = requests.get("https://en.wikipedia.org/w/api.php", headers=headers, timeout=6,
-                params={"action": "opensearch", "search": query, "limit": 1, "format": "json"})
+            # Cerca il titolo della pagina
+            search_params = {
+                "action": "opensearch",
+                "search": query,
+                "limit": 1,
+                "format": "json"
+            }
+            r = requests.get("https://en.wikipedia.org/w/api.php",
+                           params=search_params, headers=headers, timeout=6)
             results = r.json()
             if not results[1]:
                 continue
             title = results[1][0]
-            r2 = requests.get("https://en.wikipedia.org/w/api.php", headers=headers, timeout=6,
-                params={"action": "query", "titles": title, "prop": "pageimages",
-                        "format": "json", "pithumbsize": 400})
+
+            # Prendi l'immagine dalla pagina trovata
+            img_params = {
+                "action": "query",
+                "titles": title,
+                "prop": "pageimages",
+                "format": "json",
+                "pithumbsize": 400,
+            }
+            r2 = requests.get("https://en.wikipedia.org/w/api.php",
+                            params=img_params, headers=headers, timeout=6)
             data = r2.json()
             pages = data["query"]["pages"]
             page = next(iter(pages.values()))
@@ -312,14 +317,14 @@ else:
     st.progress(1.0)
     st.balloons()
 
+    display_name = re.sub(r'\s*\(.*?\)', '', prediction).strip()
+
     st.markdown(f"""
     <div class='result-banner'>
         <p style='color:#aaaacc; font-size:1.2rem; font-family: Bangers, cursive; letter-spacing:2px;'>IL TUO ALTER EGO È...</p>
-        <div class='result-name'>✨ {prediction} ✨</div>
+        <div class='result-name'>✨ {display_name} ✨</div>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
 
     # Cerca immagine Wikipedia
     with st.spinner("🔍 Cerco l'immagine del personaggio..."):

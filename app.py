@@ -5,44 +5,53 @@ import numpy as np
 import requests
 import re
 
-# ── FUNZIONE IMMAGINE WIKIPEDIA ──────────────────────────────────────
-def get_wiki_image(character_name):
-    clean_name = re.sub(r'\s*\(.*?\)', '', character_name).strip()
-    headers = {"User-Agent": "DCMarvelQuiz/1.0 (educational project)"}
+# ── FUNZIONE IMMAGINE ────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def get_character_image(character_name):
+    import re as _re
+    clean = _re.sub(r'\s*\(.*?\)', '', character_name).strip()
+    publisher = 'DC' if any(x in character_name for x in ['New Earth', 'Prime Earth']) else 'Marvel'
 
-    for query in [clean_name, clean_name + " comics", character_name]:
-        try:
-            # Cerca il titolo della pagina
-            search_params = {
-                "action": "opensearch",
-                "search": query,
-                "limit": 1,
-                "format": "json"
-            }
-            r = requests.get("https://en.wikipedia.org/w/api.php",
-                           params=search_params, headers=headers, timeout=6)
-            results = r.json()
-            if not results[1]:
+    # Parole che indicano risultati non pertinenti
+    blacklist = ['hitler', 'nazi', 'porn', 'xxx', 'nude', 'naked', 'real person', 'actor']
+
+    try:
+        from ddgs import DDGS
+        queries = [
+            f'{clean} {publisher} Comics character',
+            f'{clean} comic book character',
+            f'{clean} {publisher} wiki',
+        ]
+        for query in queries:
+            try:
+                results = list(DDGS().images(query, max_results=5))
+                for r in results:
+                    url = r.get('image', '')
+                    title = r.get('title', '').lower()
+                    # Salta risultati nella blacklist
+                    if any(w in url.lower() or w in title for w in blacklist):
+                        continue
+                    if url and any(ext in url.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                        return url
+            except Exception:
                 continue
-            title = results[1][0]
+    except ImportError:
+        pass
 
-            # Prendi l'immagine dalla pagina trovata
-            img_params = {
-                "action": "query",
-                "titles": title,
-                "prop": "pageimages",
-                "format": "json",
-                "pithumbsize": 400,
-            }
-            r2 = requests.get("https://en.wikipedia.org/w/api.php",
-                            params=img_params, headers=headers, timeout=6)
-            data = r2.json()
-            pages = data["query"]["pages"]
-            page = next(iter(pages.values()))
-            if "thumbnail" in page:
-                return page["thumbnail"]["source"]
-        except Exception:
-            continue
+    # Fallback Wikipedia REST API
+    try:
+        import urllib.parse
+        headers = {'User-Agent': 'DCMarvelQuiz/1.0 (educational project)'}
+        encoded = urllib.parse.quote(clean)
+        r = requests.get(f'https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}',
+                        headers=headers, timeout=6)
+        if r.status_code == 200:
+            img = r.json().get('thumbnail', {}).get('source')
+            if img:
+                return img
+    except Exception:
+        pass
+
     return None
 
 # ── CARICA MODELLO ───────────────────────────────────────────────────
@@ -317,18 +326,18 @@ else:
     st.progress(1.0)
     st.balloons()
 
-    display_name = re.sub(r'\s*\(.*?\)', '', prediction).strip()
-
     st.markdown(f"""
     <div class='result-banner'>
         <p style='color:#aaaacc; font-size:1.2rem; font-family: Bangers, cursive; letter-spacing:2px;'>IL TUO ALTER EGO È...</p>
-        <div class='result-name'>✨ {display_name} ✨</div>
+        <div class='result-name'>✨ {prediction} ✨</div>
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<br>", unsafe_allow_html=True)
+
     # Cerca immagine Wikipedia
     with st.spinner("🔍 Cerco l'immagine del personaggio..."):
-        img_url = get_wiki_image(prediction)
+        img_url = get_character_image(prediction)
 
     if img_url:
         col1, col2, col3 = st.columns([1, 2, 1])

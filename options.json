@@ -8,7 +8,6 @@
     "Agender Characters",
     "Female Characters",
     "Genderfluid Characters",
-    "Genderless Characters",
     "Male Characters"
   ],
   "EYE": [
@@ -21,10 +20,6 @@
     "Green Eyes",
     "Grey Eyes",
     "Hazel Eyes",
-    "Magenta Eyes",
-    "Multiple Eyes",
-    "No Eyes",
-    "One Eye",
     "Orange Eyes",
     "Photocellular Eyes",
     "Pink Eyes",
@@ -32,9 +27,7 @@
     "Red Eyes",
     "Silver Eyes",
     "Variable Eyes",
-    "Violet Eyes",
     "White Eyes",
-    "Yellow Eyeballs",
     "Yellow Eyes"
   ],
   "HAIR": [
@@ -47,22 +40,16 @@
     "Gold Hair",
     "Green Hair",
     "Grey Hair",
-    "Light Brown Hair",
-    "Magenta Hair",
     "No Hair",
     "Orange Hair",
     "Pink Hair",
-    "Platinum Blond Hair",
     "Purple Hair",
     "Red Hair",
     "Reddish Blond Hair",
-    "Reddish Brown Hair",
     "Silver Hair",
     "Strawberry Blond Hair",
     "Variable Hair",
-    "Violet Hair",
-    "White Hair",
-    "Yellow Hair"
+    "White Hair"
   ],
   "ID": [
     "Known to Authorities Identity",
@@ -80,7 +67,6 @@
   ],
   "POPULARITY": [
     "Alta",
-    "Bassa",
     "Leggenda",
     "Media"
   ]

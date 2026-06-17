@@ -4,22 +4,22 @@ from sklearn.preprocessing import LabelEncoder
 import joblib
 import json
 
-# ── 1. CARICA E PULISCI ──────────────────────────────────────────────
+# ── 1. CARICAMENTO MATERIALE E PULIZIA──────────────────────────────────────────────
 df = pd.read_csv("07_Marvel_DC_Comic_Characters.csv")
 
-# Tieni solo le colonne utili
+# qui voglio solo le colonne utili 
 cols = ["name", "ALIGN", "SEX", "EYE", "HAIR", "ID", "ALIVE", "APPEARANCES", "publisher"]
 df = df[cols].dropna()
 
-# Tieni solo personaggi con almeno 20 apparizioni (più famosi e significativi)
-df = df[df["APPEARANCES"] >= 20].copy()
+# Teniamo solo personaggi con almeno 20 apparizioni (più famosi e significativi)
+df = df[df["APPEARANCES"] >= 100].copy()
 
-# Semplifica ALIGN: solo 3 valori
+
 df["ALIGN"] = df["ALIGN"].replace({
     "Reformed Criminals": "Neutral Characters"
 })
 
-# Fascia di popolarità (invece del numero grezzo)
+# qua creo una fascia di popolarità in base al numero di apparizioni
 df["POPULARITY"] = pd.cut(
     df["APPEARANCES"],
     bins=[0, 50, 200, 500, 99999],
@@ -29,7 +29,7 @@ df["POPULARITY"] = pd.cut(
 print(f"Personaggi nel dataset pulito: {len(df)}")
 print(df["ALIGN"].value_counts())
 
-# ── 2. ENCODE ────────────────────────────────────────────────────────
+# ── 2. ENCODING ────────────────────────────────────────────────────────
 feature_cols = ["ALIGN", "SEX", "EYE", "HAIR", "ID", "ALIVE", "publisher", "POPULARITY"]
 encoders = {}
 
@@ -38,18 +38,18 @@ for col in feature_cols:
     df[col + "_enc"] = le.fit_transform(df[col].astype(str))
     encoders[col] = le
 
-# ── 3. ADDESTRA IL MODELLO ───────────────────────────────────────────
+# ── 3. ADDESTRAMENTO DEL MODELLO ───────────────────────────────────────────
 X = df[[c + "_enc" for c in feature_cols]].values
 y = df["name"].values
 
-model = DecisionTreeClassifier(max_depth=20, min_samples_leaf=1, random_state=42)
+model = DecisionTreeClassifier(max_depth=20, min_samples_leaf=1, random_state=667)
 model.fit(X, y)
 
-# ── 4. SALVA TUTTO ───────────────────────────────────────────────────
+# ── 4. IN QUESTO PUNTO STO SALVANDO TUTTE COSE ───────────────────────────────────────────────────
 joblib.dump(model, "model.pkl")
 joblib.dump(encoders, "encoders.pkl")
 
-# Salva anche i valori possibili per ogni colonna (servono al form Streamlit)
+# questa parte è importante per il form di streamlit. 
 options = {}
 for col in feature_cols:
     options[col] = sorted(df[col].astype(str).unique().tolist())
